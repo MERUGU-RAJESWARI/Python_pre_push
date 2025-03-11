@@ -7,5 +7,6 @@ def calculate_multiplication(number: int, multiplier: int) -> int:
         raise TypeError("Both number and multiplier must be integers or floats.")
     return number * multiplier
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     print_multiplication_table(2)
+
