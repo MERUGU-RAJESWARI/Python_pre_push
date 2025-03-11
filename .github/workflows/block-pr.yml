@@ -20,7 +20,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install pytest pytest-cov
+        run: pip install pytest pytest-cov jq
 
       - name: Run Python tests with coverage
         run: pytest --cov=. --cov-report=term-missing --cov-report=json:coverage.json
@@ -29,7 +29,7 @@ jobs:
         id: python_coverage
         run: |
           PYTHON_COVERAGE=$(jq '.totals.percent_covered' coverage.json | awk '{print int($1)}')
-          echo "PYTHON_COVERAGE=$PYTHON_COVERAGE" >> $GITHUB_ENV
+          echo "Extracted Python Coverage: $PYTHON_COVERAGE%"
           echo "$PYTHON_COVERAGE" > python_coverage.txt
 
       - name: Upload Python coverage for later use
@@ -56,17 +56,32 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew test jacocoTestReport
-        continue-on-error: false
+
+      - name: Debug - List Jacoco Reports
+        run: |
+          echo "Checking Jacoco report directory:"
+          ls -R build/reports/jacoco/test
 
       - name: Extract Java Coverage
         id: java_coverage
         run: |
-          JAVA_COVERAGE=$(xmllint --xpath "string(//report/counter[@type='LINE']/@covered)" build/reports/jacoco/test/jacocoTestReport.xml)
-          TOTAL_LINES=$(xmllint --xpath "string(//report/counter[@type='LINE']/@missed)" build/reports/jacoco/test/jacocoTestReport.xml)
-          JAVA_COVERAGE_PERCENT=$(echo "scale=2; ($JAVA_COVERAGE * 100) / ($JAVA_COVERAGE + $TOTAL_LINES)" | bc | awk '{print int($1)}')
+          if [ -f build/reports/jacoco/test/jacocoTestReport.xml ]; then
+            echo "Jacoco XML Report Found!"
+            COVERED_LINES=$(xmllint --xpath "string(//report/counter[@type='LINE']/@covered)" build/reports/jacoco/test/jacocoTestReport.xml)
+            MISSED_LINES=$(xmllint --xpath "string(//report/counter[@type='LINE']/@missed)" build/reports/jacoco/test/jacocoTestReport.xml)
 
-          echo "JAVA_COVERAGE=$JAVA_COVERAGE_PERCENT" >> $GITHUB_ENV
-          echo "$JAVA_COVERAGE_PERCENT" > java_coverage.txt
+            if [[ -z "$COVERED_LINES" || -z "$MISSED_LINES" ]]; then
+              echo "❌ Error: Could not extract Java test coverage numbers!"
+              exit 1
+            fi
+
+            JAVA_COVERAGE_PERCENT=$(echo "scale=2; ($COVERED_LINES * 100) / ($COVERED_LINES + $MISSED_LINES)" | bc | awk '{print int($1)}')
+            echo "Extracted Java Coverage: $JAVA_COVERAGE_PERCENT%"
+            echo "$JAVA_COVERAGE_PERCENT" > java_coverage.txt
+          else
+            echo "❌ Jacoco report XML not found!"
+            exit 1
+          fi
 
       - name: Upload Java coverage for later use
         uses: actions/upload-artifact@v3
@@ -101,4 +116,5 @@ jobs:
           if [ "$PYTHON_COVERAGE" -lt 75 ] || [ "$JAVA_COVERAGE" -lt 75 ]; then
             echo "❌ Test coverage is below 75% for Python or Java. Fix it before merging."
             exit 1
-          fi
+          else
+            echo "✅ Test coverage meets the requirements. PR can be merged."
