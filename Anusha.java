@@ -1,4 +1,4 @@
-import java.util.Scanner;
+[3:00 PM, 3/11/2025] Anu ✨: import java.util.Scanner;
 
 public class Anusha {
     public static int add(int num1, int num2) {
