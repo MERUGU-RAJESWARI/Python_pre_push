@@ -23,11 +23,20 @@ jobs:
         run: pip install pytest pytest-cov
 
       - name: Run Python tests with coverage
-        run: pytest --cov=. --cov-report=term-missing > python-coverage.txt
+        run: pytest --cov=. --cov-report=term-missing --cov-report=json:coverage.json
 
       - name: Extract Python coverage
         id: python_coverage
-        run: echo "PYTHON_COVERAGE=$(grep -oP '\d+(?=%)' python-coverage.txt | tail -1)" >> $GITHUB_ENV
+        run: |
+          PYTHON_COVERAGE=$(jq '.totals.percent_covered' coverage.json | awk '{print int($1)}')
+          echo "PYTHON_COVERAGE=$PYTHON_COVERAGE" >> $GITHUB_ENV
+          echo "$PYTHON_COVERAGE" > python_coverage.txt
+
+      - name: Upload Python coverage for later use
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-coverage
+          path: python_coverage.txt
 
   test-java:
     name: Java Tests & Coverage
@@ -52,8 +61,18 @@ jobs:
       - name: Extract Java Coverage
         id: java_coverage
         run: |
-          COVERAGE=$(grep -oP 'TOTAL.*?(\d{1,3})%' build/reports/jacoco/test/jacocoTestReport.csv | awk -F',' '{print $NF}' | tr -d '%')
-          echo "JAVA_COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          JAVA_COVERAGE=$(xmllint --xpath "string(//report/counter[@type='LINE']/@covered)" build/reports/jacoco/test/jacocoTestReport.xml)
+          TOTAL_LINES=$(xmllint --xpath "string(//report/counter[@type='LINE']/@missed)" build/reports/jacoco/test/jacocoTestReport.xml)
+          JAVA_COVERAGE_PERCENT=$(echo "scale=2; ($JAVA_COVERAGE * 100) / ($JAVA_COVERAGE + $TOTAL_LINES)" | bc | awk '{print int($1)}')
+
+          echo "JAVA_COVERAGE=$JAVA_COVERAGE_PERCENT" >> $GITHUB_ENV
+          echo "$JAVA_COVERAGE_PERCENT" > java_coverage.txt
+
+      - name: Upload Java coverage for later use
+        uses: actions/upload-artifact@v3
+        with:
+          name: java-coverage
+          path: java_coverage.txt
 
   block-pr:
     name: Enforce Coverage Requirement
@@ -61,10 +80,21 @@ jobs:
     needs: [test-python, test-java]
 
     steps:
-      - name: Block PR if Coverage < 75%
+      - name: Download Python coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: python-coverage
+
+      - name: Download Java coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: java-coverage
+
+      - name: Read Coverage Values
         run: |
-          PYTHON_COVERAGE=${{ env.PYTHON_COVERAGE }}
-          JAVA_COVERAGE=${{ env.JAVA_COVERAGE }}
+          PYTHON_COVERAGE=$(cat python_coverage.txt)
+          JAVA_COVERAGE=$(cat java_coverage.txt)
+
           echo "Python Test Coverage: $PYTHON_COVERAGE%"
           echo "Java Test Coverage: $JAVA_COVERAGE%"
 
@@ -72,4 +102,3 @@ jobs:
             echo "❌ Test coverage is below 75% for Python or Java. Fix it before merging."
             exit 1
           fi
-        shell: bash
