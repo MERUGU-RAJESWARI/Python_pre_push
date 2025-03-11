@@ -1,5 +1,5 @@
 import pytest
-from anusha import calculate_multiplication
+from multiplication import calculate_multiplication
 
 @pytest.mark.parametrize("number, multiplier", [
     (num, mul) for num in range(1, 11) for mul in range(1, 11)
