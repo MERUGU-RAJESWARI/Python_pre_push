@@ -1,17 +1,39 @@
-#Rajeswari
-import unittest
-from multiplication import calculate_multiplication
+import pytest
+from anusha import calculate_multiplication
 
-class TestMultiplication(unittest.TestCase):
-    def test_valid_multiplication(self):
-        self.assertEqual(calculate_multiplication(2, 3), 6)
-        self.assertEqual(calculate_multiplication(-1, 5), -5)
+@pytest.mark.parametrize("number, multiplier", [
+    (num, mul) for num in range(1, 11) for mul in range(1, 11)
+])
+def test_multiply_numbers(number, multiplier):
+    try:
+        result = calculate_multiplication(number, multiplier)
+        assert result == number * multiplier
+    except TypeError as e:
+        assert "Both number and multiplier must be integers or floats" in str(e)
 
-    def test_invalid_inputs(self):
-        with self.assertRaises(TypeError):
-            calculate_multiplication("a", 2)
-        with self.assertRaises(TypeError):
-            calculate_multiplication(3, "b")
+@pytest.mark.parametrize("number", [
+    3.14,  # Example float
+    None,
+    "abc",
+])
+def test_invalid_input(number):
+    with pytest.raises(TypeError):
+        calculate_multiplication(number, 10)
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.mark.parametrize("number, multiplier", [
+    (num, mul) for num in range(1, 11) for mul in range(1, 11) if num % mul != 0
+])
+def test_invalid_multiplication(number, multiplier):
+    with pytest.raises(ValueError, match="Multiplier must divide the number"):
+        calculate_multiplication(number, multiplier)
+
+@pytest.mark.parametrize("number", [
+    float("inf"),
+    float("-inf"),
+])
+def test_infinity(number):
+    assert calculate_multiplication(number, 1) == number
+
+@pytest.mark.parametrize("number, multiplier", [(10, 0)])
+def test_multiply_by_zero(number, multiplier):
+    assert calculate_multiplication(number, multiplier) == 0
