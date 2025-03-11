@@ -12,5 +12,5 @@ class TestMultiplication(unittest.TestCase):
         with self.assertRaises(TypeError):
             calculate_multiplication(3, "b")
 
-if _name_ == "_main_":
+if __name__ == "_main_":
     unittest.main()
