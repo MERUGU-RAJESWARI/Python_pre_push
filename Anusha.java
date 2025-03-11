@@ -1,26 +1,25 @@
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.Test;
+import java.util.Scanner;
 
-class AnushaTest {
-
-    @Test
-    void testAdditionPositiveNumbers() {
-        assertEquals(5, Anusha.add(2, 3), "2 + 3 should be 5");
+public class Anusha {
+    public static int add(int num1, int num2) {
+        return num1 + num2;
     }
 
-    @Test
-    void testAdditionNegativeNumbers() {
-        assertEquals(-5, Anusha.add(-2, -3), "-2 + -3 should be -5");
-    }
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
 
-    @Test
-    void testAdditionWithZero() {
-        assertEquals(7, Anusha.add(7, 0), "7 + 0 should be 7");
-        assertEquals(0, Anusha.add(0, 0), "0 + 0 should be 0");
-    }
+        System.out.print("Enter first number: ");
+        int num1 = scanner.nextInt();
 
-    @Test
-    void testAdditionLargeNumbers() {
-        assertEquals(1000000, Anusha.add(500000, 500000), "500000 + 500000 should be 1000000");
+        System.out.print("Enter second number: ");
+        int num2 = scanner.nextInt();
+
+        // Performing addition
+        int sum = add(num1, num2);
+
+        // Displaying the result
+        System.out.println("Sum: " + sum);
+
+        scanner.close();
     }
 }
