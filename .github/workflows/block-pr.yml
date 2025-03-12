@@ -13,24 +13,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          python-version: "3.10"
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Install dependencies
-        run: pip install pytest pytest-cov
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven
 
-      - name: Run tests with coverage
-        run: pytest --cov=. --cov-report=term-missing > coverage.txt
+      - name: Run tests with JaCoCo
+        run: mvn clean test jacoco:report
 
       - name: Extract coverage
         id: check_coverage
-        run: echo "COVERAGE=$(grep -oP '\d+(?=%)' coverage.txt | tail -1)" >> $GITHUB_ENV
+        run: |
+          COVERAGE=$(grep -oP '(?<=<counter type="INSTRUCTION" missed=")[0-9]+(?=" covered=")' target/site/jacoco/jacoco.xml | awk '{missed+=$1} END {print 100 - (missed / (missed + 1) * 100)}')
+          echo "Test Coverage: $COVERAGE%"
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
 
       - name: Fail if coverage < 75%
         run: |
-          if [ "$COVERAGE" -lt 75 ]; then
+          if (( $(echo "$COVERAGE < 75" | bc -l) )); then
             echo "❌ Test coverage is below 75%. Fix it before merging."
             exit 1
           fi
