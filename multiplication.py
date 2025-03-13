@@ -1,12 +1,9 @@
-def print_multiplication_table(number: int) -> None:
-    for i in range(1, 11):
-        print(f"{number} x {i} = {number * i}")
+def add_numbers(a, b):
+    return a + b
 
-def calculate_multiplication(number: int, multiplier: int) -> int:
-    if not isinstance(number, (int, float)) or not isinstance(multiplier, (int, float)):
-        raise TypeError("Both number and multiplier must be integers or floats.")
-    return number * multiplier
+# Example usage
+num1 = 10
+num2 = 20
+sum_result = add_numbers(num1, num2)
 
-if __name__ == "__main__":
-    print_multiplication_table(2)
-
+print("Sum:", sum_result)
