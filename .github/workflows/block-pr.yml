@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -22,28 +21,15 @@ jobs:
         run: pip install pytest pytest-cov
 
       - name: Run tests with coverage
-        run: pytest --cov=. --cov-report=term --cov-report=xml > coverage.txt
-
-      - name: Debug Coverage File
-        run: cat coverage.txt || echo "⚠️ Coverage file not found!"
+        run: pytest --cov=. --cov-report=term-missing > coverage.txt
 
       - name: Extract coverage
-        run: |
-          COVERAGE=$(grep -oP '\d+\.\d+(?=%)' coverage.txt | tail -1)
-          echo "Extracted Coverage: $COVERAGE"
-          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-
-      - name: Print Coverage Value
-        run: echo "Coverage value is $COVERAGE"
+        id: check_coverage
+        run: echo "COVERAGE=$(grep -oP '\d+(?=%)' coverage.txt | tail -1)" >> $GITHUB_ENV
 
       - name: Fail if coverage < 75%
         run: |
-          COVERAGE=$(grep -oP '\d+\.\d+(?=%)' coverage.txt | tail -1)
-          if [[ -z "$COVERAGE" ]]; then
-            echo "❌ Test coverage could not be determined!"
-            exit 1
-          fi
-          if (( $(echo "$COVERAGE < 75" | bc -l) )); then
+          if [ "$COVERAGE" -lt 75 ]; then
             echo "❌ Test coverage is below 75%. Fix it before merging."
             exit 1
           fi
