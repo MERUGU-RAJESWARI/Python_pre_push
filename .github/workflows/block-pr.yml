@@ -22,20 +22,27 @@ jobs:
         run: pip install pytest pytest-cov
 
       - name: Run tests with coverage
-        run: pytest --cov=. --cov-report=term-missing > coverage.txt
+        run: pytest --cov=. --cov-report=term --cov-report=xml > coverage.txt
 
       - name: Debug Coverage File
-        run: cat coverage.txt || echo "Coverage file not found!"
+        run: cat coverage.txt || echo "⚠️ Coverage file not found!"
 
       - name: Extract coverage
-        id: check_coverage
         run: |
           COVERAGE=$(grep -oP '\d+\.\d+(?=%)' coverage.txt | tail -1)
           echo "Extracted Coverage: $COVERAGE"
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
 
+      - name: Print Coverage Value
+        run: echo "Coverage value is $COVERAGE"
+
       - name: Fail if coverage < 75%
         run: |
+          COVERAGE=$(grep -oP '\d+\.\d+(?=%)' coverage.txt | tail -1)
+          if [[ -z "$COVERAGE" ]]; then
+            echo "❌ Test coverage could not be determined!"
+            exit 1
+          fi
           if (( $(echo "$COVERAGE < 75" | bc -l) )); then
             echo "❌ Test coverage is below 75%. Fix it before merging."
             exit 1
