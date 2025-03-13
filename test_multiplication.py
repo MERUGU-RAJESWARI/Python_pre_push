@@ -1,7 +1,7 @@
 import unittest
-from add_numbers import add_numbers
+from multiplication import add_numbers
 
-class TestAddNumbers(unittest.TestCase):
+class TestMultiplication(unittest.TestCase):
     
     def test_valid_addition(self):
         self.assertEqual(add_numbers(2, 3), 5)

@@ -1,4 +1,4 @@
-def add_numbers(a, b):
+def multiplication(a, b):
     return a + b
 
 # Example usage
